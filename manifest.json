@@ -1,0 +1,14 @@
+{
+  "name": "نظام نداء الطلاب — مدارس التربية النموذجية العالمية",
+  "short_name": "نداء الطلاب",
+  "description": "نظام نداء الطلاب عند الانصراف",
+  "display": "standalone",
+  "dir": "rtl",
+  "lang": "ar",
+  "background_color": "#ffffff",
+  "theme_color": "#252b4c",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
