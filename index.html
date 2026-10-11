@@ -180,8 +180,11 @@ var dev=(function(){try{var d=localStorage.getItem("dev");if(!d){d=Core.code(8);
 function esc(t){var d=document.createElement("div");d.textContent=t;return d.innerHTML}
 function ago(t){var m=Math.max(0,Math.round((Date.now()+OFF-t)/60000));return m<1?"الآن":"منذ "+m+" د"}
 function status(t,d){stTxt=t;stDot=d||"";$("st").textContent=t;$("dt").className="dot "+stDot}
-function unlock(){try{ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();if(ctx.state=="suspended")ctx.resume()}catch(e){}}
-function beep(){try{var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=880;g.gain.value=.5;o.start();o.stop(ctx.currentTime+.6);if(navigator.vibrate)navigator.vibrate([200,100,200])}catch(e){}}
+function unlock(){try{var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!ctx||ctx.state=="closed")ctx=new AC();if(ctx.state!="running")ctx.resume()}catch(e){}}
+function tone(f,at,d){var o=ctx.createOscillator(),g=ctx.createGain();o.type="sine";o.frequency.value=f;o.connect(g);g.connect(ctx.destination);var s=ctx.currentTime+at;g.gain.setValueAtTime(0.0001,s);g.gain.exponentialRampToValueAtTime(.6,s+.03);g.gain.exponentialRampToValueAtTime(.0001,s+d);o.start(s);o.stop(s+d+.05)}
+function ring(){tone(880,0,.35);tone(1175,.4,.35);tone(880,.8,.35);tone(1175,1.2,.5)}
+function beep(){try{if(navigator.vibrate)navigator.vibrate([300,120,300,120,300])}catch(e){}
+  try{unlock();if(!ctx)return;if(ctx.state=="running")ring();else ctx.resume().then(ring).catch(function(){})}catch(e){}}
 function wake(){try{navigator.wakeLock.request("screen").catch(function(){})}catch(e){}}
 function W(p){return p.catch(function(){status("تعذّر تنفيذ العملية، تحقق من الاتصال بالإنترنت","off")})}
 function sv(){try{localStorage.setItem("sess",JSON.stringify(SS));localStorage.setItem("by",by)}catch(e){}}
@@ -269,6 +272,7 @@ function renderNa(){if(!SS||role<3)return;
   }).catch(function(){$("na").innerHTML='<div class="empty">تعذّر تحميل إعدادات الإشعارات.</div>'})}
 function notify(s){Push.meta(SS.code,false).then(function(p){if(!p.url)return;return fetch(p.url+"/notify",{method:"POST",body:JSON.stringify({code:SS.code,id:s.id})})}).catch(function(){status("تعذّر إرسال إشعار الهاتف","off")})}
 
+["pointerdown","touchstart","keydown"].forEach(function(ev){document.addEventListener(ev,unlock,{passive:true})});document.addEventListener("visibilitychange",function(){if(!document.hidden)unlock()});
 document.addEventListener("click",function(e){unlock();var t=e.target.closest?e.target.closest("[data-tab],[data-a]"):e.target;if(!t)return;var g=function(k){return t.getAttribute&&t.getAttribute(k)};
   if(g("data-tab"))return setTab(g("data-tab"));var a=g("data-a"),i=g("data-i");if(!a||!SS)return;var c=SS.code,s=ST.students.filter(function(x){return x.id==i})[0];
   if(a=="call"&&s)W(Core.call(c,i,by).then(function(){Core.log(c,"نداء",s,by);notify(s)}));
