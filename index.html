@@ -175,7 +175,7 @@ swReg.catch(function(){});
 
 <script id="ui">
 var $=function(i){return document.getElementById(i)};
-var RN={3:"admin",2:"gate",1:"teacher"},ST={students:[],calls:{}},SS=null,META=null,role=0,tab="",first=true,ctx=null,clsKey="",OFF=0,offSet=false,by="",stTxt="غير متصل",stDot="";
+var RN={3:"admin",2:"gate",1:"teacher"},ST={students:[],calls:{}},SS=null,META=null,role=0,tab="",first=true,ctx=null,SEEN={},clsKey="",OFF=0,offSet=false,by="",stTxt="غير متصل",stDot="";
 var dev=(function(){try{var d=localStorage.getItem("dev");if(!d){d=Core.code(8);localStorage.setItem("dev",d)}return d}catch(e){return "d"+Math.random().toString(36).slice(2,9)}})();
 function esc(t){var d=document.createElement("div");d.textContent=t;return d.innerHTML}
 function ago(t){var m=Math.max(0,Math.round((Date.now()+OFF-t)/60000));return m<1?"الآن":"منذ "+m+" د"}
@@ -214,7 +214,9 @@ function setTab(t){tab=t;["gate","teach","admin"].forEach(function(x){$(x).hidde
 function onData(d){d=d||{};var o=d.students||{},calls=d.calls||{},S=[];
   Object.keys(o).forEach(function(k){S.push({id:k,n:o[k].n,c:o[k].c})});S.sort(function(a,b){return a.n<b.n?-1:1});
   if(!offSet&&d.ping&&typeof d.ping[dev]=="number"){OFF=d.ping[dev]-Date.now();offSet=true}
-  if(!first&&role>=1&&tab=="teach"){var c=$("cls").value;S.forEach(function(s){var a=calls[s.id],p=ST.calls[s.id];if(a&&a.st=="called"&&s.c==c&&!(p&&p.st=="called"))beep()})}
+  var cur={};Object.keys(calls).forEach(function(k){if(calls[k]&&calls[k].st=="called")cur[k]=String(calls[k].at)});
+  if(!first&&role>=1&&tab=="teach"){var c=$("cls").value,ring_=false;S.forEach(function(s){if(s.c==c&&cur[s.id]!==undefined&&SEEN[s.id]!==cur[s.id])ring_=true});if(ring_)beep()}
+  SEEN=cur;
   if(role>=2){var now=Date.now()+OFF;Object.keys(calls).forEach(function(k){var x=calls[k];if(x.st=="sent"&&x.sentAt&&now-x.sentAt>1200000)Core.cancel(SS.code,k).catch(function(){})})}
   ST={students:S,calls:calls};first=false;render()}
 function render(){var S=ST.students,byId={},calls=ST.calls;S.forEach(function(s){byId[s.id]=s});
