@@ -185,7 +185,7 @@ function tone(f,at,d){var o=ctx.createOscillator(),g=ctx.createGain();o.type="si
 function ring(){tone(880,0,.35);tone(1175,.4,.35);tone(880,.8,.35);tone(1175,1.2,.5)}
 function beep(){try{if(navigator.vibrate)navigator.vibrate([300,120,300,120,300])}catch(e){}
   try{unlock();if(!ctx)return;if(ctx.state=="running")ring();else ctx.resume().then(ring).catch(function(){})}catch(e){}}
-function wake(){try{navigator.wakeLock.request("screen").catch(function(){})}catch(e){}}
+var TTS=("speechSynthesis" in window)?window.speechSynthesis:null;function arVoice(){if(!TTS)return null;var v=TTS.getVoices()||[];return v.filter(function(x){return /^ar/i.test(x.lang)})[0]||null}if(TTS&&TTS.onvoiceschanged!==undefined)TTS.onvoiceschanged=function(){arVoice()};function say(t){if(!TTS)return false;var v=arVoice();if(!v&&(TTS.getVoices()||[]).length)return false;try{var u=new SpeechSynthesisUtterance(t);u.lang=v?v.lang:"ar-SA";if(v)u.voice=v;u.rate=.9;u.volume=1;TTS.speak(u);return true}catch(e){return false}}function announce(names){if(!names.length)return;setTimeout(function(){names.forEach(function(n){var t="الطالب "+n+"، مطلوب إلى البوابة";say(t);say(t)})},1800)}function wake(){try{navigator.wakeLock.request("screen").catch(function(){})}catch(e){}}
 function W(p){return p.catch(function(){status("تعذّر تنفيذ العملية، تحقق من الاتصال بالإنترنت","off")})}
 function sv(){try{localStorage.setItem("sess",JSON.stringify(SS));localStorage.setItem("by",by)}catch(e){}}
 function logout(m){Core.close();SS=null;role=0;$("app").hidden=true;$("newc").hidden=true;$("login").hidden=false;$("lo").hidden=true;$("sc").textContent="مدارس التربية النموذجية العالمية";$("err").textContent=m||"";status("غير متصل","");try{localStorage.removeItem("sess")}catch(e){}}
@@ -215,7 +215,7 @@ function onData(d){d=d||{};var o=d.students||{},calls=d.calls||{},S=[];
   Object.keys(o).forEach(function(k){S.push({id:k,n:o[k].n,c:o[k].c})});S.sort(function(a,b){return a.n<b.n?-1:1});
   if(!offSet&&d.ping&&typeof d.ping[dev]=="number"){OFF=d.ping[dev]-Date.now();offSet=true}
   var cur={};Object.keys(calls).forEach(function(k){if(calls[k]&&calls[k].st=="called")cur[k]=String(calls[k].at)});
-  if(!first&&role>=1&&tab=="teach"){var c=$("cls").value,ring_=false;S.forEach(function(s){if(s.c==c&&cur[s.id]!==undefined&&SEEN[s.id]!==cur[s.id])ring_=true});if(ring_)beep()}
+  if(!first&&role>=1&&tab=="teach"){var c=$("cls").value,ring_=false,nw=[];S.forEach(function(s){if(s.c==c&&cur[s.id]!==undefined&&SEEN[s.id]!==cur[s.id]){ring_=true;nw.push(s.n)}});if(ring_){beep();announce(nw)}}
   SEEN=cur;
   if(role>=2){var now=Date.now()+OFF;Object.keys(calls).forEach(function(k){var x=calls[k];if(x.st=="sent"&&x.sentAt&&now-x.sentAt>1200000)Core.cancel(SS.code,k).catch(function(){})})}
   ST={students:S,calls:calls};first=false;render()}
@@ -284,7 +284,7 @@ document.addEventListener("click",function(e){unlock();var t=e.target.closest?e.
 $("go").onclick=login;$("pin").onkeydown=function(e){if(e.key=="Enter")login()};$("lo").onclick=function(){logout("")};
 $("nw").onclick=function(){$("login").hidden=true;$("newc").hidden=false};$("bk").onclick=function(){$("newc").hidden=true;$("login").hidden=false};$("mk").onclick=create;
 $("ts").onclick=function(){$("tr").textContent="جارٍ الفحص…";Core.test().then(function(r){$("tr").textContent=r.out.join("\n")})};
-$("snd").onclick=function(){unlock();setTimeout(function(){if(ctx&&ctx.state=="running"){beep();$("sns").textContent="إن سمعت النغمة فالصوت يعمل ✓"}else $("sns").textContent="الصوت لا يعمل: ارفع مستوى الصوت وتأكد من إيقاف وضع الصامت."},200)};
+$("snd").onclick=function(){unlock();setTimeout(function(){if(ctx&&ctx.state=="running"){beep();var ok=say("تم تفعيل النداء الصوتي");$("sns").textContent=ok?"إن سمعت النغمة ثم الصوت فالنداء الصوتي يعمل ✓":"النغمة تعمل، لكن لا يوجد صوت عربي على هذا الجهاز، فسيعمل التنبيه بالنغمة فقط."}else $("sns").textContent="الصوت لا يعمل: ارفع مستوى الصوت وتأكد من إيقاف وضع الصامت."},200)};
 $("q").oninput=render;$("as").oninput=render;
 $("cls").onchange=function(){try{localStorage.setItem("cls",$("cls").value)}catch(e){}render();renderNt()};
 $("ad").onclick=function(){var n=$("an").value.trim(),c=$("ac").value.trim();if(n&&c)W(Core.addStudents(SS.code,[[n,c]]).then(function(){$("an").value=""}))};
