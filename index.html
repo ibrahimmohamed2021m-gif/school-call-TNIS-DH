@@ -249,7 +249,7 @@ function renderNt(){if(!SS)return;var box=$("nt"),c=$("cls").value;
       if(sid){box.innerHTML='<div class="msg" style="color:var(--ok);font-weight:700;margin:0 0 12px">الإشعارات مفعّلة للفصل '+esc(c)+' على هذا الجهاز ✓</div><div class="two"><button class="btn gold sm" id="pt">إرسال إشعار تجريبي</button><button class="btn ghost sm" id="pd">إيقاف الإشعارات</button></div><div class="msg" id="pm"></div>';
         $("pt").onclick=function(){$("pm").textContent="جارٍ الإرسال…";Push.post(p.url,"/test",{code:SS.code,cls:c,sid:sid}).then(function(r){$("pm").textContent=r.sent?"أُرسل الإشعار، ويجب أن يصل خلال ثوانٍ.":"لم يُرسَل الإشعار. أعد تفعيل الإشعارات لهذا الفصل ثم جرّب مجددًا."}).catch(function(){$("pm").textContent="تعذّر الوصول إلى خدمة الإشعارات."})};
         $("pd").onclick=function(){W(Core.delSub(SS.code,Push.slug(c),sid).then(function(){renderNt()}))}}
-      else{box.innerHTML='<button class="btn gold w" id="pe">تفعيل إشعارات الفصل '+esc(c)+' على هذا الجهاز</button><div class="msg" id="pm"></div><p class="hint" style="margin-top:8px">سيطلب المتصفح إذنك لإظهار الإشعارات، فاختر «السماح». إن كنت تدرّس أكثر من فصل فعّلها لكل فصل.</p>';
+      else{box.innerHTML='<button class="btn gold w" id="pe">أنا في الفصل '+esc(c)+' الآن، استقبل نداءاته</button><div class="msg" id="pm"></div><p class="hint" style="margin-top:8px">سيطلب المتصفح إذنك لإظهار الإشعارات، فاختر «السماح». الجهاز يستقبل نداءات فصل واحد فقط، هو آخر فصل تختاره. اختر فصلك في آخر حصة كل يوم واضغط الزر، وستتوقف نداءات الفصل السابق تلقائيًا.</p>';
         $("pe").onclick=function(){pushEnable(c,p)}}
     }).catch(function(){box.innerHTML='<div class="empty">تعذّر تشغيل خدمة الإشعارات على هذا الجهاز. تأكد من رفع ملف sw.js مع الصفحة.</div>'})
   }).catch(function(){box.innerHTML='<div class="empty">تعذّر تحميل إعدادات الإشعارات.</div>'})}
@@ -259,7 +259,7 @@ function pushEnable(c,p){var pm=$("pm");pm.className="msg";pm.textContent="جا�
     return reg.pushManager.getSubscription().then(function(s){
       if(s&&s.options&&s.options.applicationServerKey){var cur=new Uint8Array(s.options.applicationServerKey),same=cur.length==key.length&&cur.every(function(v,i){return v==key[i]});if(!same)return s.unsubscribe().then(function(){return null})}
       return s}).then(function(s){return s||reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:key})})})})
-  .then(function(sub){var j=sub.toJSON();return Push.sid(j.endpoint).then(function(sid){return Core.putSub(SS.code,Push.slug(c),sid,{sub:j,c:c,by:by,t:Core.SV})})})
+  .then(function(sub){var j=sub.toJSON();return Push.sid(j.endpoint).then(function(sid){var mine=Push.slug(c),seen={},dels=[];Array.prototype.forEach.call($("cls").options,function(o){var sl=Push.slug(o.value);if(sl!=mine&&!seen[sl]){seen[sl]=1;dels.push(Core.delSub(SS.code,sl,sid).catch(function(){}))}});return Promise.all(dels).then(function(){return Core.putSub(SS.code,mine,sid,{sub:j,c:c,by:by,t:Core.SV})})})})
   .then(function(){renderNt()})
   .catch(function(e){pm.className="msg e";pm.textContent=e=="denied"?"لم يُمنح إذن الإشعارات. فعّله من إعدادات المتصفح ثم أعد المحاولة.":"تعذّر التفعيل: "+(e&&e.message||e)})}
 function renderNa(){if(!SS||role<3)return;
